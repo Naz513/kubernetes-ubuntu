@@ -1,0 +1,125 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Test Kubernetes EC2 Instances
+
+Parameters:
+  InstanceType:
+    Description: Enter t2.micro, t3.medium, or t3.large. Default is t3.medium.
+    Type: String
+    Default: t3.medium
+    AllowedValues:
+      - t2.micro
+      - t3.medium
+      - t3.large
+  ImageAMIId:
+    Description: Enter a valid ami image ID
+    Type: String
+  VolumeSizeEC2:
+    Description: Enter the desired Volume Size
+    Type: Number
+    Default: 20
+
+Resources:
+  MasterNodeKubernetesSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties: 
+      GroupDescription: SecurityGroup for Kubernetes Cluster - Master Node
+      GroupName: KuberentesSGMasterNode
+      SecurityGroupIngress: 
+        - CidrIp: 0.0.0.0/0
+          Description: "SSH to EC2 Instances"
+          FromPort: 22
+          IpProtocol: tcp
+          ToPort: 22
+        - CidrIp: 0.0.0.0/0
+          Description: "Kubernetes API server"
+          FromPort: 6443
+          IpProtocol: tcp
+          ToPort: 6443
+        - CidrIp: 0.0.0.0/0
+          Description: "etcd server client API"
+          FromPort: 2379
+          IpProtocol: tcp
+          ToPort: 2380
+        - CidrIp: 0.0.0.0/0
+          Description: "kubelet API"
+          FromPort: 10250
+          IpProtocol: tcp
+          ToPort: 10250
+        - CidrIp: 0.0.0.0/0
+          Description: "kube-scheduler"
+          FromPort: 10251
+          IpProtocol: tcp
+          ToPort: 10251
+        - CidrIp: 0.0.0.0/0
+          Description: "kube-controller-manager"
+          FromPort: 10252
+          IpProtocol: tcp
+          ToPort: 10252
+      Tags: 
+        - Key: Name
+          Value: Kuberentes SG Master Node
+
+  WorkerNodeKubernetesSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties: 
+      GroupDescription: SecurityGroup for Kubernetes Cluster - Worker Node
+      GroupName: KuberentesSGWorkerNode
+      SecurityGroupIngress: 
+        - CidrIp: 0.0.0.0/0
+          Description: "SSH to EC2 Instances"
+          FromPort: 22
+          IpProtocol: tcp
+          ToPort: 22
+        - CidrIp: 0.0.0.0/0
+          Description: "kubelet API"
+          FromPort: 10250
+          IpProtocol: tcp
+          ToPort: 10250
+        - CidrIp: 0.0.0.0/0
+          Description: "NodePort Services"
+          FromPort: 30000
+          IpProtocol: tcp
+          ToPort: 32767
+      Tags: 
+        - Key: Name
+          Value: Kuberentes SG Worker Node
+
+  WorkerNode:
+    DependsOn: WorkerNodeKubernetesSG
+    Type: AWS::EC2::Instance
+    Properties: 
+      ImageId: !Ref ImageAMIId
+      InstanceInitiatedShutdownBehavior: terminate
+      InstanceType: !Ref InstanceType
+      KeyName: pc-ssh
+      SecurityGroupIds:
+        - !Ref WorkerNodeKubernetesSG
+      Tags: 
+        - Key: Name
+          Value: WrokerNode
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeSize: !Ref VolumeSizeEC2
+            VolumeType: gp2
+            DeleteOnTermination: true
+
+  MasterNode:
+    DependsOn: MasterNodeKubernetesSG
+    Type: AWS::EC2::Instance
+    Properties: 
+      ImageId: !Ref ImageAMIId
+      InstanceInitiatedShutdownBehavior: terminate
+      InstanceType: !Ref InstanceType
+      KeyName: pc-ssh
+      SecurityGroupIds:
+        - !Ref MasterNodeKubernetesSG
+      Tags: 
+        - Key: Name
+          Value: MasterNode
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeSize: !Ref VolumeSizeEC2
+            VolumeType: gp2
+            DeleteOnTermination: true
