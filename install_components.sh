@@ -73,3 +73,27 @@ sudo apt-get update
 sudo apt-get install -y kubelet kubeadm kubectl
 sudo apt-mark hold kubelet kubeadm kubectl
 echo " "
+
+echo "###################################################################################"
+echo "# Configure the Docker daemon to use systemd                                      #"
+echo "###################################################################################"
+sudo mkdir /etc/docker
+cat <<EOF | sudo tee /etc/docker/daemon.json
+{
+  "exec-opts": ["native.cgroupdriver=systemd"],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m"
+  },
+  "storage-driver": "overlay2"
+}
+EOF
+echo " "
+
+echo "###################################################################################"
+echo "# Restart Docker and enable on boot                                               #"
+echo "###################################################################################"
+sudo systemctl enable docker
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+echo " "
