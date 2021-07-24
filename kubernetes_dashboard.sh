@@ -26,8 +26,7 @@ echo " "
 echo "###################################################################################"
 echo "# 4/5 Get the Token                                                               #"
 echo "###################################################################################"
-kubectl get secret | grep cluster-admin-dashboard-sa
-kubectl describe secret $(kubectl get secret | grep cluster-admin-dashboard-sa-*)'
+kubectl describe secret $(kubectl get secret | awk '/^cluster-admin-dashboard-sa-token-/{print $1}') | awk '$1=="token:"{print $2}'
 echo " "
 
 echo "###################################################################################"
