@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Test Kubernetes EC2 Instances
+Description: Deploy Kuberentes Cluster with 1 Master Node and 1 Worker Node
 
 Parameters:
   InstanceType:
@@ -92,6 +92,14 @@ Resources:
       InstanceInitiatedShutdownBehavior: terminate
       InstanceType: !Ref InstanceType
       KeyName: pc-ssh
+      UserData:
+        Fn::Base64: !Sub |
+            #!/bin/bash -xe
+            cd /home/ubuntu
+            echo pwd
+            su ubuntu -c "git clone https://github.com/Naz513/kubernetes-ubuntu.git"
+            cd kubernetes-ubuntu/
+            su ubuntu -c "chmod +x install_components.sh"
       SecurityGroupIds:
         - !Ref WorkerNodeKubernetesSG
       Tags: 
@@ -112,6 +120,14 @@ Resources:
       InstanceInitiatedShutdownBehavior: terminate
       InstanceType: !Ref InstanceType
       KeyName: pc-ssh
+      UserData:
+        Fn::Base64: !Sub |
+            #!/bin/bash -xe
+            cd /home/ubuntu
+            echo pwd
+            su ubuntu -c "git clone https://github.com/Naz513/kubernetes-ubuntu.git"
+            cd kubernetes-ubuntu/
+            su ubuntu -c "chmod +x install_components.sh  kube_init.sh  kubernetes_dashboard.sh"
       SecurityGroupIds:
         - !Ref MasterNodeKubernetesSG
       Tags: 
@@ -123,3 +139,17 @@ Resources:
             VolumeSize: !Ref VolumeSizeEC2
             VolumeType: gp2
             DeleteOnTermination: true
+
+Outputs:
+  MasterNodeIP:
+    Description: IP of Master Node
+    Value: !GetAtt MasterNode.PublicIp
+  MasterNodeConnectSSH:
+    Description: SSH into Master Node
+    Value: !Sub ssh -i "pc-ssh.pem" ubuntu@${MasterNode.PublicDnsName}
+  WorkerNodeIP:
+    Description: IP of Worker Node
+    Value: !GetAtt WorkerNode.PublicIp
+  WorkerNodeConnectSSH:
+    Description: SSH into Worker Node
+    Value: !Sub ssh -i "pc-ssh.pem" ubuntu@${WorkerNode.PublicDnsName}
