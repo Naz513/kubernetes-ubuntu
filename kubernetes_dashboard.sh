@@ -28,7 +28,6 @@ echo "# 4/5 Get the Token                                                       
 echo "###################################################################################"
 kubectl get secret | grep cluster-admin-dashboard-sa
 kubectl describe secret $(kubectl get secret | grep cluster-admin-dashboard-sa-*)'
-
 echo " "
 
 echo "###################################################################################"
